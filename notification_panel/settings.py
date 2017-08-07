@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
+from __future__ import absolute_import
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -129,3 +129,41 @@ MEDIA_URL = '/media/'
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+CELERY_DEFAULT_QUEUE = 'default'
+
+
+ADMIN_ROLE_NAME = ['admin']
+BROKER_URL = 'amqp://guest:guest@localhost//'
+
+from kombu import Exchange, Queue
+
+CELERY_QUEUES = (
+    Queue('general', Exchange('default'), routing_key='general'),
+)
+
+CELERY_ROUTES = {
+    'panel.tasks.process_notification': {'queue': 'general'},
+
+}
+
+from celery.schedules import crontab
+
+CELERYBEAT_SCHEDULE = {
+    'panel': {
+        'task': 'panel.tasks.process_notification',
+        'schedule': crontab(minute='*/1'),
+    }
+}
+
+# All logging to be performed using celery logger
+CELERY_REDIRECT_STDOUTS = False
+
+CELERY_DISABLE_RATE_LIMITS = True
+
+CELERY_SEND_TASK_ERROR_EMAILS = True
+
+CELERY_ALWAYS_EAGER = False
+
+CELERY_TASK_SERIALIZER = "json"
